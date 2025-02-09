@@ -1,0 +1,40 @@
+#!/bin/bash
+
+mcrcon_path='/home/gearshift@gsg/tcp/mcrcon/mcrcon'
+
+$mcrcon_path -H localhost -P 25640 -p $TCP_PASSWORD "say Server restarting in 30 minutes!";
+sleep 900;
+
+$mcrcon_path -H localhost -P 25640 -p $TCP_PASSWORD "say Server restarting in 15 minutes!";
+sleep 840;
+
+$mcrcon_path -H localhost -P 25640 -p $TCP_PASSWORD "say Server restarting in 1 minute!";
+sleep 60;
+
+$mcrcon_path -H localhost -P 25640 -p $TCP_PASSWORD "say Server restarting, and daily backup starting! It should be back in under 30 minutes.";
+sleep 10;
+
+$mcrcon_path -H localhost -P 25640 -p $TCP_PASSWORD save-all;
+
+echo "Stopping MC server...";
+
+systemctl --user stop minecraft;
+
+while [ $(systemctl --user is-active minecraft) != inactive ];
+do
+	echo "Server not finished closing!";
+	sleep 30;
+done
+
+echo "Backing MC server up...";
+sh ./daily_backup_script.sh;
+
+wait;
+
+echo "Backup complete! Restarting Minecraft server.";
+
+systemctl --user start minecraft;
+
+sleep 300;
+
+$mcrcon_path -H localhost -P 25640 -p $TCP_PASSWORD "dynmap fullrender tcp";
