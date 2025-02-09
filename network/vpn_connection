@@ -1,0 +1,49 @@
+function Connect-VPN
+{
+    if ($response -eq 0)
+    {
+        if($VPN.ConnectionStatus -eq "Disconnected")
+        {
+            $VPN_Username = Read-Host -Prompt 'Enter your username'
+            Write-Host "Enter your password below. Characters entered will not appear."
+            rasdial $VPN_Name $VPN_Username *
+        }
+    }
+}
+
+$VPN_Name = Read-Host -Prompt 'Enter the name you want your VPN to show up as'
+$VPN_Target = $Env:gsg_network_target
+$VPN_PSK = Read-Host -Prompt 'Enter the "Secret Key" for the VPN' -AsSecureString
+
+$PlainPassword_BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($VPN_PSK)
+$PlainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($PlainPassword_BSTR)
+
+Add-VpnConnection $VPN_Name -ServerAddress $VPN_Target -TunnelType "L2tp" -EncryptionLevel "Required" -L2tpPsk $PlainPassword -Force
+Set-VpnConnection -Name $VPN_Name -AuthenticationMethod MSChapv2 -SplitTunneling $false -RememberCredential $true
+Set-VpnConnectionIPsecConfiguration -ConnectionName $VPN_Name -EncryptionMethod AES256 -CipherTransformConstants AES256 -IntegritycheckMethod SHA256 -PFSGroup ECP256 -AuthenticationTransformConstants SHA196 -DHGroup 2 -PassThru -Force
+Write-Host "VPN Settings changed successfully!"
+
+$options = '&Yes', '&No'
+$VPN = Get-VpnConnection -Name $VPN_Name
+$response = $Host.UI.PromptForChoice('' ,'Connect to ' + $VPN_Name + ' VPN Now?', $options, 1)
+
+Connect-VPN
+
+$VPN = Get-VpnConnection -Name $VPN_Name
+
+if($response -eq 0 -and $VPN.ConnectionStatus -eq "Connected")
+{
+    Write-Host "You are now connected to the GSG VPN! Make sure to disconnect from it before you play games, watch netflix, or make large downloads."    
+}
+elseif ($response -eq 0 -and $VPN.ConnectionStatus -eq "Disconnected")
+{
+    Write-Host "Password or username incorrect, please re-enter them."
+    Connect-VPN
+}
+else
+{
+    Write-Host "Configuration Complete! You can connect to the VPN at any time"  
+}
+
+Pause
+[System.GC]::Collect()
