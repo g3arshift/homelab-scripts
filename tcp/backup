@@ -1,0 +1,46 @@
+#!/bin/sh
+
+command1="restic -r b2:tcp-mc:backups/ backup $HOME/tcp/ --exclude=$HOME/tcp/dynmap/web --exclude=$HOME/tcp/backups 2>&1"
+output1=$(eval "${command1}")
+result1=$?
+
+command2="restic -r b2:tcp-mc:backups/ backup $HOME/tcp/ --exclude=$HOME/tcp/dynmap/web --exclude=$HOME/tcp/backups 2>&1"
+output2=$(eval "${command2}")
+result2=$?
+
+message="
+----------TCP MC Backup Report----------
+$(date)
+"
+
+if [[ $result1 != 0 ]] || [[ $result2 != 0 ]]; then
+    message="${message}
+----------------------------------------
+BACKUP FAILED!! See output below.
+----------------------------------------
+"
+    subject="Backup FAILED---$(date)"
+else
+    message="${message}
+----------------------------------------
+Backup SUCCEEDED.
+----------------------------------------
+"
+    subject="Backup successful---$(date)"
+fi
+
+message="${message}
+\$ ${command1}
+${output1}
+\$ ${command2}
+${output2}
+----------------------------------------
+Snapshot history:
+----------------------------------------
+$(restic -r b2:tcp-mc:backups/ snapshots)
+"
+
+echo "Subject: ${subject}"
+echo "Message: ${message}"
+
+echo -e "${message}" | mailx -A gmail -s "${subject}" gearshift@gearshiftgaming.com
