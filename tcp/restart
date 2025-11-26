@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source vars.env
+
 mcrcon_path='/home/gearshift@gsg/tcp/mcrcon/mcrcon'
 
 $mcrcon_path -H localhost -P 25640 -p $TCP_PASSWORD "say Server restarting in 30 minutes!";
