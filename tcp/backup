@@ -1,5 +1,9 @@
 #!/bin/sh
 
+set -a
+source vars.env
+set +a
+
 command1="restic -r b2:tcp-mc:backups/ backup $HOME/tcp/ --exclude=$HOME/tcp/dynmap/web --exclude=$HOME/tcp/backups 2>&1"
 output1=$(eval "${command1}")
 result1=$?
